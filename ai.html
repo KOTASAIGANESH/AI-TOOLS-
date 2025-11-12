@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Tools Hub - Liquid Glass</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, Inter, Helvetica, Arial, sans-serif;
+    color: #fff;
+    background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);
+    overflow-x: hidden;
+    overflow-y: auto; /* allow vertical scroll if needed */
+    min-height: 100vh;
+  }
+
+  canvas#ripple-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .glass-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(25px) saturate(180%);
+    background: rgba(255, 255, 255, 0.08);
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    padding: 40px 20px 10px;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 2;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    width: 90%;
+    max-width: 1300px;
+    margin: 40px auto 80px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 24px;
+    padding: 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+  }
+
+  .card:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 8px 30px rgba(255, 255, 255, 0.3);
+  }
+
+  .card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255, 255, 255, 0.4), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .card:hover::after {
+    opacity: 1;
+  }
+
+  .card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+
+  .card p {
+    font-size: 0.9rem;
+    opacity: 0.85;
+  }
+
+  .tag {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+  }
+</style>
+</head>
+<body>
+<canvas id="ripple-bg"></canvas>
+<div class="glass-overlay"></div>
+
+<header>🌐 AI Tools Hub</header>
+<div class="grid" id="toolGrid"></div>
+
+<script>
+const tools = [
+  {name:"ChatGPT",category:"Chatbot",url:"https://chat.openai.com",type:"🆓/💰"},
+  {name:"Gemini",category:"Chatbot",url:"https://gemini.google.com",type:"🆓/💰"},
+  {name:"Claude",category:"Chatbot",url:"https://claude.ai",type:"🆓/💰"},
+  {name:"Perplexity AI",category:"Chatbot",url:"https://www.perplexity.ai",type:"🆓"},
+  {name:"Pi AI",category:"Chatbot",url:"https://pi.ai",type:"🆓"},
+  {name:"Midjourney",category:"Image",url:"https://www.midjourney.com",type:"💰"},
+  {name:"Leonardo AI",category:"Image",url:"https://leonardo.ai",type:"🆓/💰"},
+  {name:"Playground AI",category:"Image",url:"https://playground.com",type:"🆓/💰"},
+  {name:"Bing Image Creator",category:"Image",url:"https://www.bing.com/create",type:"🆓"},
+  {name:"Dream by Wombo",category:"Image",url:"https://dream.ai",type:"🆓/💰"},
+  {name:"RunwayML",category:"Video",url:"https://runwayml.com",type:"💰"},
+  {name:"Pika Labs",category:"Video",url:"https://pika.art",type:"🆓/💰"},
+  {name:"Synthesia",category:"Video",url:"https://www.synthesia.io",type:"💰"},
+  {name:"HeyGen",category:"Video",url:"https://www.heygen.com",type:"🆓/💰"},
+  {name:"Kaiber",category:"Video",url:"https://kaiber.ai",type:"🆓/💰"},
+  {name:"ElevenLabs",category:"Voice",url:"https://elevenlabs.io",type:"🆓/💰"},
+  {name:"Play.ht",category:"Voice",url:"https://play.ht",type:"🆓/💰"},
+  {name:"Murf AI",category:"Voice",url:"https://murf.ai",type:"💰"},
+  {name:"TTSMaker",category:"Voice",url:"https://ttsmaker.com",type:"🆓"},
+  {name:"Whisper",category:"Speech",url:"https://openai.com/research/whisper",type:"🆓"},
+  {name:"AssemblyAI",category:"Speech",url:"https://www.assemblyai.com",type:"🆓/💰"},
+  {name:"Vosk",category:"Speech",url:"https://alphacephei.com/vosk/",type:"🆓"},
+  {name:"Notion AI",category:"Writing",url:"https://www.notion.so/product/ai",type:"💰"},
+  {name:"Copy.ai",category:"Writing",url:"https://www.copy.ai",type:"🆓/💰"},
+  {name:"Jasper",category:"Writing",url:"https://www.jasper.ai",type:"💰"},
+  {name:"Grammarly",category:"Writing",url:"https://www.grammarly.com",type:"🆓/💰"},
+  {name:"QuillBot",category:"Writing",url:"https://quillbot.com",type:"🆓/💰"},
+  {name:"GitHub Copilot",category:"Coding",url:"https://github.com/features/copilot",type:"💰"},
+  {name:"Replit Ghostwriter",category:"Coding",url:"https://replit.com",type:"🆓/💰"},
+  {name:"Hugging Face",category:"AI Models",url:"https://huggingface.co",type:"🆓"},
+  {name:"Cody",category:"Coding",url:"https://sourcegraph.com/cody",type:"🆓/💰"},
+  {name:"You.com",category:"Search",url:"https://you.com",type:"🆓"},
+  {name:"Phind",category:"Search",url:"https://phind.com",type:"🆓/💰"},
+  {name:"Consensus",category:"Research",url:"https://consensus.app",type:"🆓/💰"}
+];
+
+const grid = document.getElementById('toolGrid');
+tools.forEach(tool => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<h3>${tool.name}</h3><p>${tool.category}</p><span class='tag'>${tool.type}</span>`;
+  card.addEventListener('mousemove', e => {
+    const rect = e.target.getBoundingClientRect();
+    card.style.setProperty('--x', `${e.clientX - rect.left}px`);
+    card.style.setProperty('--y', `${e.clientY - rect.top}px`);
+  });
+  card.addEventListener('click', () => window.open(tool.url, '_blank'));
+  grid.appendChild(card);
+});
+
+// background ripple
+const canvas = document.getElementById('ripple-bg');
+const ctx = canvas.getContext('2d');
+let ripples = [];
+let w, h;
+
+function resize() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+function addRipple(x, y) {
+  ripples.push({ x, y, r: 0, alpha: 0.4 });
+}
+canvas.addEventListener('click', e => addRipple(e.clientX, e.clientY));
+
+function animate() {
+  ctx.clearRect(0, 0, w, h);
+  const gradient = ctx.createLinearGradient(0, 0, w, h);
+  gradient.addColorStop(0, '#4facfe');
+  gradient.addColorStop(1, '#00f2fe');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < ripples.length; i++) {
+    const rp = ripples[i];
+    ctx.beginPath();
+    ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,255,255,${rp.alpha})`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    rp.r += 3;
+    rp.alpha -= 0.01;
+    if (rp.alpha <= 0) ripples.splice(i, 1);
+  }
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
